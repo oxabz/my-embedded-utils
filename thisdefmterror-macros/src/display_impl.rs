@@ -31,7 +31,7 @@ pub(crate) fn impl_unamed_variant(variant: &syn::Variant, fmt_str: &syn::LitStr,
     quote_spanned! {
         variant_span =>
         Self::#variant_ident(#(#variant_fields_names)*) => {
-            f.write_fmt(format_args!(fmt, #fmt_str, #(#variant_fields_names)*))
+            f.write_fmt(format_args!(#fmt_str, #(#variant_fields_names)*))
         }
     }
 }
