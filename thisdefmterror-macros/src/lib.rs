@@ -4,7 +4,7 @@ mod from_impl;
 
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, spanned::Spanned, Attribute, DeriveInput,  LitStr};
+use syn::{parse_macro_input, punctuated::Punctuated, spanned::Spanned, Attribute, DeriveInput, GenericArgument, GenericParam, LitStr, PathSegment, Token};
 
 
 macro_rules! bail {
@@ -23,6 +23,42 @@ fn is_from_attr(attr: &&Attribute) -> bool{
     attr.path().get_ident().map(|ident| ident == "from").unwrap_or(false)
 }
 
+fn generic_param_to_arg(param: &GenericParam) -> GenericArgument{
+    match param {
+        GenericParam::Lifetime(lifetime_param) =>
+            GenericArgument::Lifetime(lifetime_param.lifetime.clone()),
+        GenericParam::Type(type_param) => {
+            let mut segments: Punctuated<PathSegment, syn::token::PathSep> = Punctuated::new();
+            segments.push(PathSegment{
+                ident: type_param.ident.clone(),
+                arguments: syn::PathArguments::None,
+            });
+            let typ = syn::TypePath{
+                qself: None,
+                path: syn::Path{
+                    leading_colon: None,
+                    segments,
+                },
+            };
+
+            GenericArgument::Type(syn::Type::Path(typ))
+        },
+        GenericParam::Const(const_param) => {
+            let mut segments: Punctuated<PathSegment, syn::token::PathSep> = Punctuated::new();
+            segments.push(PathSegment{
+                ident: const_param.ident.clone(),
+                arguments: syn::PathArguments::None,
+            });
+            let expr_path = syn::ExprPath{
+                attrs: vec![],
+                qself: None,
+                path: syn::Path { leading_colon: None, segments},
+            };
+            GenericArgument::Const(syn::Expr::Path(expr_path))
+        },
+    }
+}
+
 #[proc_macro_derive(DefmtError, attributes(error, from, display))]
 pub fn derive_helper_attr(item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as DeriveInput);
@@ -33,7 +69,10 @@ pub fn derive_helper_attr(item: TokenStream) -> TokenStream {
     };
 
     let ident = input.ident;
-
+    let mut generics = input.generics.clone();
+    let generics_where = generics.where_clause.take();
+    let generics_arg: syn::punctuated::Punctuated<_, Token![::]> = input.generics.params.iter().map(generic_param_to_arg).collect();
+    
     let mut variants_display_impl = vec![];
     let mut variants_format_impl = vec![];
     let mut from_impls = vec![];
@@ -54,7 +93,7 @@ pub fn derive_helper_attr(item: TokenStream) -> TokenStream {
                     .flat_map(|field|field.attrs.iter())
                     .find(is_from_attr).is_some();
                 if is_into_variant{
-                    from_impls.push(from_impl::impl_from(&ident, &variant, fields_unnamed));
+                    from_impls.push(from_impl::impl_from(&ident, &variant, fields_unnamed, &generics, &generics_where, &generics_arg));
                 }
 
                 (display_impl::impl_unamed_variant(&variant, &fmt_str, fields_unnamed), format_impl::impl_unamed_variant(&variant, &fmt_str, fields_unnamed))
@@ -66,9 +105,11 @@ pub fn derive_helper_attr(item: TokenStream) -> TokenStream {
         variants_display_impl.push(display_impl);
     }
 
+    
+
     let defmt_impl = if cfg!(feature = "defmt") {
         Some(quote! {
-            impl defmt::Format for  #ident {
+            impl #generics defmt::Format for  #ident<#generics_arg> #generics_where {
                 fn format(&self, fmt: defmt::Formatter) {
                     match self {
                         #(#variants_format_impl)*
@@ -81,10 +122,10 @@ pub fn derive_helper_attr(item: TokenStream) -> TokenStream {
     };
 
     quote! {
-        impl DefmtError for #ident {}
-        impl core::error::Error for  #ident {}
+        impl #generics DefmtError for #ident<#generics_arg> #generics_where {}
+        impl #generics core::error::Error for  #ident<#generics_arg> #generics_where {}
 
-        impl core::fmt::Display for #ident  {
+        impl #generics core::fmt::Display for #ident<#generics_arg> #generics_where {
             fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
                 match self {
                     #(#variants_display_impl)*
