@@ -4,7 +4,7 @@ use syn::spanned::Spanned;
 use crate::bail;
 
 
-pub(crate) fn impl_into(item_ident: &syn::Ident, variant: &syn::Variant, fields: &syn::FieldsUnnamed) -> proc_macro2::TokenStream {
+pub(crate) fn impl_from(item_ident: &syn::Ident, variant: &syn::Variant, fields: &syn::FieldsUnnamed) -> proc_macro2::TokenStream {
     if fields.unnamed.len() > 1 {
         bail!(fields, "#[into] only works with one fields variants");
     }

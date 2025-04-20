@@ -1,6 +1,6 @@
 mod format_impl;
 mod display_impl;
-mod into_impl;
+mod from_impl;
 
 use proc_macro::TokenStream;
 use quote::quote;
@@ -19,11 +19,11 @@ pub(crate) use bail;
 fn is_error_attr(attr: &&Attribute) -> bool{
     attr.path().get_ident().map(|ident| ident == "error").unwrap_or(false)
 }
-fn is_into_attr(attr: &&Attribute) -> bool{
-    attr.path().get_ident().map(|ident| ident == "into").unwrap_or(false)
+fn is_from_attr(attr: &&Attribute) -> bool{
+    attr.path().get_ident().map(|ident| ident == "from").unwrap_or(false)
 }
 
-#[proc_macro_derive(DefmtError, attributes(error, into, display))]
+#[proc_macro_derive(DefmtError, attributes(error, from, display))]
 pub fn derive_helper_attr(item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as DeriveInput);
 
@@ -36,7 +36,7 @@ pub fn derive_helper_attr(item: TokenStream) -> TokenStream {
 
     let mut variants_display_impl = vec![];
     let mut variants_format_impl = vec![];
-    let mut into_impls = vec![];
+    let mut from_impls = vec![];
     for variant in data_enum.variants{
         let Some(attr) = variant.attrs.iter().find(is_error_attr) else {
             bail!(variant, "Variant need to have an associated error attribute");
@@ -52,9 +52,9 @@ pub fn derive_helper_attr(item: TokenStream) -> TokenStream {
                 let is_into_variant = fields_unnamed.unnamed
                     .iter()
                     .flat_map(|field|field.attrs.iter())
-                    .find(is_into_attr).is_some();
+                    .find(is_from_attr).is_some();
                 if is_into_variant{
-                    into_impls.push(into_impl::impl_into(&ident, &variant, fields_unnamed));
+                    from_impls.push(from_impl::impl_from(&ident, &variant, fields_unnamed));
                 }
 
                 (display_impl::impl_unamed_variant(&variant, &fmt_str, fields_unnamed), format_impl::impl_unamed_variant(&variant, &fmt_str, fields_unnamed))
@@ -94,6 +94,6 @@ pub fn derive_helper_attr(item: TokenStream) -> TokenStream {
 
         #defmt_impl
 
-        #(#into_impls)*
+        #(#from_impls)*
     }.into()
 }
