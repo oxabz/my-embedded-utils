@@ -25,4 +25,6 @@ enum MyError{
 
 ## pack
 
+>Note: This crate use big-endian as most networks do
+
 Dead simple serialization and deserialization crate
