@@ -14,9 +14,9 @@ enum MyError{
     #[error("A unit variant error")]
     UnitError,
     #[error("Tuple error, {1}, {0}, {2}")]
-    TupleError(u8, f32, [u8;4])
+    TupleError(u8, f32, [u8;4]),
     #[error("An into error : {}")]
-    IntoError(#[into]SomeOtherError) // Needs to implment defmt::Format and core::error::Error
+    IntoError(#[into]SomeOtherError), // Needs to implment defmt::Format and core::error::Error
     #[error("An type that only implement Display can still be used : {}")]
     Display(#[display]NotADefmt) // Note this should be used sparsly because it force the compiler to keep the format strings for the type
 }
