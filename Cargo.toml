@@ -1,5 +1,5 @@
 [workspace]
-members = ["thisdefmterror", "thisdefmterror-macros"]
+members = ["pack", "thisdefmterror", "thisdefmterror-macros"]
 resolver = "2"
 
 [workspace.dependencies]
