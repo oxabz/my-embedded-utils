@@ -1,0 +1,8 @@
+[package]
+name = "thisdefmterror"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+defmt = { workspace = true }
+thisdefmterror-macros = {path = "../thisdefmterror-macros"}

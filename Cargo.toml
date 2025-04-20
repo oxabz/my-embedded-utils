@@ -1,0 +1,6 @@
+[workspace]
+members = ["thisdefmterror", "thisdefmterror-macros"]
+resolver = "2"
+
+[workspace.dependencies]
+defmt = "1.0"
