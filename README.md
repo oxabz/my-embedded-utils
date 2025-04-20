@@ -22,3 +22,7 @@ enum MyError{
 }
 
 ```
+
+## pack
+
+Dead simple serialization and deserialization crate
