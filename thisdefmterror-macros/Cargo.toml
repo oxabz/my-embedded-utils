@@ -3,6 +3,8 @@ name = "thisdefmterror-macros"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+defmt = []
 
 [lib]
 proc-macro = true

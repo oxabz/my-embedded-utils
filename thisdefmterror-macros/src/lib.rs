@@ -66,6 +66,20 @@ pub fn derive_helper_attr(item: TokenStream) -> TokenStream {
         variants_display_impl.push(display_impl);
     }
 
+    let defmt_impl = if cfg!(feature = "defmt") {
+        Some(quote! {
+            impl defmt::Format for  #ident {
+                fn format(&self, fmt: defmt::Formatter) {
+                    match self {
+                        #(#variants_format_impl)*
+                    }
+                }
+            }    
+        })
+    } else {
+        None
+    };
+
     quote! {
         impl DefmtError for #ident {}
         impl core::error::Error for  #ident {}
@@ -78,13 +92,7 @@ pub fn derive_helper_attr(item: TokenStream) -> TokenStream {
             }
         }
 
-        impl defmt::Format for  #ident {
-            fn format(&self, fmt: defmt::Formatter) {
-                match self {
-                    #(#variants_format_impl)*
-                }
-            }
-        }
+        #defmt_impl
 
         #(#into_impls)*
     }.into()

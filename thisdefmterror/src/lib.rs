@@ -4,7 +4,6 @@
  * 
  */
 
-
 pub use thisdefmterror_macros::DefmtError;
 
 /**
@@ -12,5 +11,8 @@ pub use thisdefmterror_macros::DefmtError;
  * 
  * This crate also implements a derive similar to the crate this error
  */
+#[cfg(feature = "defmt")]
 pub trait DefmtError: core::error::Error + defmt::Format {}
+#[cfg(not(feature = "defmt"))]
+pub trait DefmtError: core::error::Error {}
 
