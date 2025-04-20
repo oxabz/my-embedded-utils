@@ -19,10 +19,14 @@ pub(crate) fn impl_unit_variant(variant: &syn::Variant, fmt_str: &syn::LitStr) -
 fn is_display_attr(attr: &&syn::Attribute) -> bool{
     attr.path().get_ident().map(|ident| ident == "display").unwrap_or(false)
 }
+fn is_debug_attr(attr: &&syn::Attribute) -> bool{
+    attr.path().get_ident().map(|ident| ident == "debug").unwrap_or(false)
+}
 
 
 pub(crate) fn impl_unamed_variant(variant: &syn::Variant, fmt_str: &syn::LitStr, fields: &syn::FieldsUnnamed) -> proc_macro2::TokenStream{
     let mut display_fields = vec![];
+    let mut debug_fields = vec![];
     let mut variant_fields_names = vec![];
     if fields.unnamed.len() > 26 {
         super::bail!(variant, "This macro only support 26 fields for tuple variants, also may I ask what the fuck are you even doing???");
@@ -41,6 +45,13 @@ pub(crate) fn impl_unamed_variant(variant: &syn::Variant, fmt_str: &syn::LitStr,
                 }
             );
         }
+        if item.attrs.iter().find(is_debug_attr).is_some() {
+            debug_fields.push(
+                quote! {
+                    let #ident = defmt::Debug2Format(#ident);
+                }
+            );
+        }
     }
 
     let variant_ident = &variant.ident;
@@ -49,6 +60,7 @@ pub(crate) fn impl_unamed_variant(variant: &syn::Variant, fmt_str: &syn::LitStr,
         variant_span =>
         Self::#variant_ident(#(#variant_fields_names)*) => {
             #(#display_fields)*
+            #(#debug_fields)*
 
             defmt::write!(fmt, #fmt_str, #(#variant_fields_names)*);
         }
