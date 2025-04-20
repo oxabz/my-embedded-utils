@@ -84,7 +84,7 @@ pub fn derive_helper_attr(item: TokenStream) -> TokenStream {
         impl DefmtError for #ident {}
         impl core::error::Error for  #ident {}
 
-        impl core::fmt::Display for TestError {
+        impl core::fmt::Display for #ident  {
             fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
                 match self {
                     #(#variants_display_impl)*
