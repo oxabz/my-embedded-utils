@@ -58,7 +58,6 @@ fn generic_param_to_arg(param: &GenericParam) -> GenericArgument{
         },
     }
 }
-
 #[proc_macro_derive(DefmtError, attributes(error, from, display, debug))]
 pub fn derive_helper_attr(item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as DeriveInput);
