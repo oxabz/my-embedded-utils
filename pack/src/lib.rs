@@ -75,7 +75,7 @@ impl Pack for bool {
 }
 
 
-macro_rules! pack_int_impl {
+macro_rules! pack_uint_impl {
     ($typ: path, $size: expr) => {
         impl Pack for $typ {
             const SIZE: usize = $size;
@@ -103,14 +103,42 @@ macro_rules! pack_int_impl {
     };
 }
 
-pack_int_impl!(u16, 2);
-pack_int_impl!(u32, 4);
-pack_int_impl!(u64, 8);
-pack_int_impl!(u128, 16);
-pack_int_impl!(i16, 2);
-pack_int_impl!(i32, 4);
-pack_int_impl!(i64, 8);
-pack_int_impl!(i128, 16);
+macro_rules! pack_iint_impl {
+    ($utyp: path, $typ: path, $size: expr) => {
+        impl Pack for $typ {
+            const SIZE: usize = $size;
+
+            fn pack(&self, buf: &mut [u8]) {
+                let mut this = (*self) as $utyp;
+                
+                for i in 1..=Self::SIZE {
+                    buf[Self::SIZE - i] = (this & 0xFF) as u8;
+                    this = this >> 8;
+                }
+            }
+        
+            fn unpack(buf: &[u8]) -> Self {
+                let mut this: $utyp = 0;
+
+                for i in 0..Self::SIZE {
+                    this |= (buf[i] as $utyp);
+                    this = this << 8;
+                }
+
+                this as $typ
+            }
+        }
+    };
+}
+
+pack_uint_impl!(u16, 2);
+pack_uint_impl!(u32, 4);
+pack_uint_impl!(u64, 8);
+pack_uint_impl!(u128, 16);
+pack_iint_impl!(u16, i16, 2);
+pack_iint_impl!(u32, i32, 4);
+pack_iint_impl!(u64, i64, 8);
+pack_iint_impl!(u128, i128, 16);
 
 macro_rules! pack_tuple_impl {
     ($($idents: ident),+) => {
